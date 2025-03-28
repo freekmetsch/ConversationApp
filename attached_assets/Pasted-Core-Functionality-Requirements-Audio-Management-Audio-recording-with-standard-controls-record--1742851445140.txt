@@ -1,0 +1,66 @@
+Core Functionality Requirements
+Audio Management
+•	Audio recording with standard controls (record, pause, stop)
+•	Enable drag-and-drop import of existing audio files (mp3, wav, m4a)
+•	Implement audio playback with basic tools: play, pause, forward, rewind
+Metadata Management
+•	Each conversation (which consists of audio, transcript and analyses) includes metadata for: 
+o	Student name (with autocomplete from previous entries)
+o	Class
+o	Conversation type
+o	Date and time
+•	CRUD operations for conversation types 
+•	Search and filter functionality using metadata
+Transcription System
+•	Integration with OpenAI's Whisper API for speech-to-text conversion 
+•	Automatic transcription of recorded or imported audio 
+•	Background processing with visible progress indicators 
+•	Editable transcriptions with debounced onChange events 
+•	In-transcript basic search functionality
+Analysis using Custom Prompt Management
+•	Integrate OpenAI's GPT-4o Mini for transcript analysis
+•	Text area to create custom prompts with name
+•	Ability to save, edit, and delete prompts
+•	Custom prompt library with search functionality
+•	Option to apply different prompts to the same transcript
+•	Checkbox selection menu to apply multiple custom prompts simultaneously
+•	Start with an empty prompt library
+Data Management
+•	SQLite database for all structured data (metadata, transcriptions, analyses, etc.) 
+•	Audio files stored in local file system with path set by user in settings. 
+•	Batch operations (delete, archive, export) for conversations 
+•	Storage usage statistics and cleanup tools 
+•	API keys stored separately in JSON format for security 
+•	Backup and restore functionality
+Database Schema
+Core Tables
+•	students - Student information with name and class
+•	conversation_types - Types of coaching conversations
+•	conversations - Main conversation records linking student, type, and audio path
+•	transcriptions - Complete transcript text with link to conversation
+•	prompts - Custom analysis prompt templates
+•	analyses - Results from running prompts against transcripts
+•	user_preferences - Application settings and preferences
+Indexes and Search Support
+•	Standard indexes on foreign keys and frequently queried fields
+•	Full-text search indexes for transcript content
+
+
+UI/UX Design Specifications
+User Interface
+•	Single dashboard layout with the following structure: 
+o	Top Bar: Recording/import controls and application settings
+o	Content Area split into: 
+	Left Sidebar (20%): Conversation library with search and filters
+	Main Content Area (80%): Tabbed interface with: 
+	Transcript Editor tab
+	Analysis Workspace tab (split horizontally with prompts on top, results below)
+•	Clean, minimalist design with intuitive controls
+•	Include subtle animations for state changes and toast notification system for important events
+Core Technologies
+•	Application Framework: Electron 
+•	Frontend: React.js, Bootstrap, Zustand 
+•	Database: SQLite for structured data storage 
+•	File System: For audio files only 
+•	API Integration: OpenAI's Whisper and GPT-4o Mini 
+•	Audio Processing: Web Audio API 
