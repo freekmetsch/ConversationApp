@@ -234,6 +234,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const conversationId = parseInt(req.params.id);
       
+      // Check if OpenAI API key is available before proceeding
+      const hasKey = await openai.hasOpenAIKey();
+      if (!hasKey) {
+        return res.status(400).json({ 
+          error: "OpenAI API key not configured", 
+          details: "Please set your OpenAI API key in the application settings to enable transcription features." 
+        });
+      }
+      
       // Get the conversation to get the audio file
       const conversation = await storage.getConversation(conversationId);
       if (!conversation) {
@@ -388,6 +397,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const conversationId = parseInt(req.params.id);
       const { promptIds } = req.body;
+      
+      // Check if OpenAI API key is available before proceeding
+      const hasKey = await openai.hasOpenAIKey();
+      if (!hasKey) {
+        return res.status(400).json({ 
+          error: "OpenAI API key not configured", 
+          details: "Please set your OpenAI API key in the application settings to enable analysis features." 
+        });
+      }
       
       if (!promptIds || !Array.isArray(promptIds) || promptIds.length === 0) {
         return res.status(400).json({ error: "At least one prompt ID is required" });

@@ -11,15 +11,32 @@ async function getOpenAIClient(): Promise<OpenAI> {
   const apiKey = preferences?.apiKeys?.openai || process.env.OPENAI_API_KEY || "";
   
   if (!apiKey) {
-    throw new Error("OpenAI API key not found. Please set your API key in the application settings or OPENAI_API_KEY environment variable.");
+    throw new Error("MISSING_API_KEY");
   }
   
   return new OpenAI({ apiKey });
 }
 
+// Function to check if OpenAI API key is available
+export async function hasOpenAIKey(): Promise<boolean> {
+  try {
+    const preferences = await storage.getUserPreferences();
+    const apiKey = preferences?.apiKeys?.openai || process.env.OPENAI_API_KEY || "";
+    return !!apiKey;
+  } catch (error) {
+    return false;
+  }
+}
+
 // Speech-to-text transcription using Whisper API
 export async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
   try {
+    // Check if API key is available before attempting transcription
+    const hasKey = await hasOpenAIKey();
+    if (!hasKey) {
+      throw new Error("OpenAI API key not found. Please set your API key in the application settings or OPENAI_API_KEY environment variable.");
+    }
+    
     const openai = await getOpenAIClient();
     
     // Create a temporary file on disk that the OpenAI API can access
@@ -46,6 +63,9 @@ export async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
       }
     }
   } catch (error) {
+    if (error instanceof Error && error.message === "MISSING_API_KEY") {
+      throw new Error("OpenAI API key not found. Please set your API key in the application settings or OPENAI_API_KEY environment variable.");
+    }
     console.error("Error transcribing audio:", error);
     throw new Error(`Failed to transcribe audio: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -54,6 +74,12 @@ export async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
 // Text analysis using GPT-4o Mini
 export async function analyzeTranscript(transcript: string, prompt: string): Promise<string> {
   try {
+    // Check if API key is available before attempting analysis
+    const hasKey = await hasOpenAIKey();
+    if (!hasKey) {
+      throw new Error("OpenAI API key not found. Please set your API key in the application settings or OPENAI_API_KEY environment variable.");
+    }
+    
     const openai = await getOpenAIClient();
     
     // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -73,6 +99,9 @@ export async function analyzeTranscript(transcript: string, prompt: string): Pro
 
     return response.choices[0].message.content || "No analysis generated.";
   } catch (error) {
+    if (error instanceof Error && error.message === "MISSING_API_KEY") {
+      throw new Error("OpenAI API key not found. Please set your API key in the application settings or OPENAI_API_KEY environment variable.");
+    }
     console.error("Error analyzing transcript:", error);
     throw new Error(`Failed to analyze transcript: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -81,6 +110,12 @@ export async function analyzeTranscript(transcript: string, prompt: string): Pro
 // Structured analysis with JSON output
 export async function analyzeTranscriptStructured(transcript: string, prompt: string): Promise<any> {
   try {
+    // Check if API key is available before attempting analysis
+    const hasKey = await hasOpenAIKey();
+    if (!hasKey) {
+      throw new Error("OpenAI API key not found. Please set your API key in the application settings or OPENAI_API_KEY environment variable.");
+    }
+    
     const openai = await getOpenAIClient();
     
     // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -101,6 +136,9 @@ export async function analyzeTranscriptStructured(transcript: string, prompt: st
 
     return JSON.parse(response.choices[0].message.content || "{}");
   } catch (error) {
+    if (error instanceof Error && error.message === "MISSING_API_KEY") {
+      throw new Error("OpenAI API key not found. Please set your API key in the application settings or OPENAI_API_KEY environment variable.");
+    }
     console.error("Error analyzing transcript with structured output:", error);
     throw new Error(`Failed to analyze transcript: ${error instanceof Error ? error.message : String(error)}`);
   }
