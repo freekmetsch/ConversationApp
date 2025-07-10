@@ -8,7 +8,11 @@ import { Play, Pause, SkipBack, SkipForward, AlertCircle, Loader2 } from 'lucide
 import { useToast } from '@/hooks/use-toast';
 import { PlayerState } from '@/lib/audio';
 
-export function AudioPlayer() {
+interface AudioPlayerProps {
+  activeTab?: string;
+}
+
+export function AudioPlayer({ activeTab }: AudioPlayerProps) {
   const { toast } = useToast();
   const { setPlaybackState } = useSessionStore();
   const selectedConversation = selectSelectedConversation(useConversationsStore.getState());
@@ -21,8 +25,13 @@ export function AudioPlayer() {
   const [isLoading, setIsLoading] = useState(true);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   
+  // Check if audio player should be active (not on analysis tab)
+  const shouldBeActive = activeTab !== 'analysis';
+  
   // Initialize the audio element
   useEffect(() => {
+    if (!shouldBeActive) return;
+    
     const audioEl = document.createElement('audio');
     audioEl.style.display = 'none';
     document.body.appendChild(audioEl);
@@ -77,7 +86,21 @@ export function AudioPlayer() {
         // Element might already be removed
       }
     };
-  }, []);
+  }, [shouldBeActive]);
+  
+  // Stop playback and clear audio when switching to analysis tab
+  useEffect(() => {
+    if (!shouldBeActive && audioElement) {
+      audioElement.pause();
+      audioElement.src = '';
+      setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
+      setError(null);
+      setIsLoading(true);
+      updatePlaybackState(false, 0, 0);
+    }
+  }, [shouldBeActive, audioElement]);
   
   // Helper function to update the global playback state
   const updatePlaybackState = (playing: boolean, time: number, audioDuration: number) => {
@@ -90,7 +113,7 @@ export function AudioPlayer() {
   
   // Load audio when conversation changes
   useEffect(() => {
-    if (!audioElement || !selectedConversation?.audioPath) return;
+    if (!audioElement || !selectedConversation?.audioPath || !shouldBeActive) return;
     
     // Reset state
     setCurrentTime(0);
@@ -136,7 +159,7 @@ export function AudioPlayer() {
       setError("Failed to load audio file");
       setIsLoading(false);
     }
-  }, [selectedConversation, audioElement]);
+  }, [selectedConversation, audioElement, shouldBeActive]);
   
   // Estimate duration from file size when metadata is not available
   const estimateDurationFromFileSize = (url: string) => {
@@ -206,7 +229,7 @@ export function AudioPlayer() {
   };
   
   // Hide player if no conversation is selected
-  if (!selectedConversation?.audioPath) {
+  if (!selectedConversation?.audioPath || !shouldBeActive) {
     return null;
   }
   
