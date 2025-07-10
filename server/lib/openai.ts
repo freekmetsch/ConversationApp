@@ -2,14 +2,26 @@ import OpenAI from "openai";
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { storage } from '../storage';
 
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || "" 
-});
+// Function to get OpenAI client with current API key
+async function getOpenAIClient(): Promise<OpenAI> {
+  // First try to get API key from user preferences
+  const preferences = await storage.getUserPreferences();
+  const apiKey = preferences?.apiKeys?.openai || process.env.OPENAI_API_KEY || "";
+  
+  if (!apiKey) {
+    throw new Error("OpenAI API key not found. Please set your API key in the application settings or OPENAI_API_KEY environment variable.");
+  }
+  
+  return new OpenAI({ apiKey });
+}
 
 // Speech-to-text transcription using Whisper API
 export async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
   try {
+    const openai = await getOpenAIClient();
+    
     // Create a temporary file on disk that the OpenAI API can access
     const tempDir = os.tmpdir();
     const tempFilePath = path.join(tempDir, `audio-${Date.now()}.wav`);
@@ -42,6 +54,8 @@ export async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
 // Text analysis using GPT-4o Mini
 export async function analyzeTranscript(transcript: string, prompt: string): Promise<string> {
   try {
+    const openai = await getOpenAIClient();
+    
     // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -67,6 +81,8 @@ export async function analyzeTranscript(transcript: string, prompt: string): Pro
 // Structured analysis with JSON output
 export async function analyzeTranscriptStructured(transcript: string, prompt: string): Promise<any> {
   try {
+    const openai = await getOpenAIClient();
+    
     // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
